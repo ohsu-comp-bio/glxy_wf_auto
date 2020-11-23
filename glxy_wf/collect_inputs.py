@@ -75,8 +75,8 @@ def collect_inputs(config_path):
         sample_ids.append(upload_dataset(gi, sf, file_type, library_folder_name)["id"])
 
     # Create collection list in history
-    logging.info("Creating collection in history")
-    sample_collection = create_collection_in_history(gi, sample, history_id, sample_ids)
+    logging.info("Populating sample data in history")
+    sample_data = create_dataset_or_collection_in_history(gi, sample, history_id, sample_ids)
 
 
     logging.info("Preparing to invoke workflow")
@@ -99,10 +99,10 @@ def collect_inputs(config_path):
                 "src": "ld",
             }
 
-        if label == "RAW_FILES":
+        if label == "INPUT":
             inputs[uuid] = {
-                "id": sample_collection["id"],
-                "src": "hdca",
+                "id": sample_data["id"],
+                "src": sample_data["src"],
             }
 
 
@@ -192,8 +192,9 @@ def upload_dataset(gi, data_path, file_type, folder_name):
 
     return dataset
 
-def create_collection_in_history(gi, name, history_id, ids):
+def create_dataset_or_collection_in_history(gi, name, history_id, ids):
     elements = []
+    logging.info("Adding sample datasets to history")
     for i, f in enumerate(ids):
         fh = gi.histories.upload_dataset_from_library(history_id, f)
         elements.append({
@@ -202,10 +203,15 @@ def create_collection_in_history(gi, name, history_id, ids):
             "name": os.path.basename(fh["name"]).rstrip("."+fh["extension"])
         })
 
-    logging.info("Creating collection")
-    collection = gi.histories.create_dataset_collection(history_id, {
-        "collection_type": "list",
-        "name": name,
-        "element_identifiers": elements
-    })
+    if len(elements) < 1:
+        logging.info("Creating collection")
+        collection = gi.histories.create_dataset_collection(history_id, {
+            "collection_type": "list",
+            "name": name,
+            "element_identifiers": elements
+        })
+    else:
+        collection = elements[0]
+
     return collection
+

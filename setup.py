@@ -51,7 +51,7 @@ setup(
       "six==1.11.0",
       "urllib3==1.22",
       "coloredlogs==9.0",
-      "jq==2.11.1",
+      "yq==2.11.1",
     ],
     entry_points={
         "console_scripts": ["glxy_wf=glxy_wf.__main__:main"]},
