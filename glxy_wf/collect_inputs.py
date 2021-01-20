@@ -77,7 +77,7 @@ def collect_inputs(config_path):
     # Create collection list in history
     logging.info("Populating sample data in history")
     sample_data = create_dataset_or_collection_in_history(gi, sample, history_id, sample_ids)
-
+    logging.info("sample collection data: %s", sample_data)
 
     logging.info("Preparing to invoke workflow")
     common_inputs_library_ids = {}
@@ -122,7 +122,11 @@ def collect_inputs(config_path):
                    sub_dict[sub_id] = param_value
                params[step_id] = sub_dict
             else:
-                params[step_id] = step_params
+                step_dict = {}
+                for step_k, step_v in step_params.items():
+                     step_dict[step_k] = step_v
+                
+                params[step_id] = step_dict
 
     # Replacement params
     replace_dict = {}
@@ -133,6 +137,10 @@ def collect_inputs(config_path):
     # Invoke workflow
     logging.info("Invoking workflow")
     workflow_id = wfdesc["uuid"]
+    logging.info("Replacement params: %s", replace_dict)
+    logging.info("Workflow params: %s", params)
+    logging.info("Inputs: %s", inputs)
+
     res = gi.workflows.invoke_workflow(workflow_id, inputs, history_id=history_id,
         params=params, import_inputs_to_history=False, replacement_params=replace_dict)
     print(json.dumps(res, indent=2))
@@ -203,13 +211,14 @@ def create_dataset_or_collection_in_history(gi, name, history_id, ids):
             "name": os.path.basename(fh["name"]).rstrip("."+fh["extension"])
         })
 
-    if len(elements) < 1:
+    if len(elements) > 1:
         logging.info("Creating collection")
         collection = gi.histories.create_dataset_collection(history_id, {
             "collection_type": "list",
             "name": name,
             "element_identifiers": elements
         })
+        collection['src'] = "hdca"
     else:
         collection = elements[0]
 
