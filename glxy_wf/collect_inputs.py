@@ -48,6 +48,8 @@ def collect_inputs(config_path):
     sample_conf = require_config("sample")
     workflow_params_config = config.get("workflow_params", {})
     replacement_params = config.get("replacement_params", {})
+    tags = config.get("tags")
+    publish = config.get("publish")
 
     # Create galaxy object and get workflow descsription
     gi = bioblend.galaxy.GalaxyInstance(url=galaxy_url, key=galaxy_api_key)
@@ -62,6 +64,18 @@ def collect_inputs(config_path):
     logging.info("Creating history: %s", history_name)
     history = get_or_create_history(gi, history_name)
     history_id = history["id"]
+    create_history_tags(gi, history_id, tags)
+    gi.histories.update_history(history_id, published=publish)
+
+    # Upload common_inputs
+    logging.info("Uploading Common Inputs")
+    cm_files = require_config("common_input_files")
+    for cm_key, cm_val in cm_files.items():
+        fd_name = os.path.dirname(common_inputs[cm_key])
+        file_type = os.path.splitext(cm_val)[-1].lstrip(".")
+        logging.info("Galaxy Common Inputs folder name: %s", fd_name)
+        logging.info("Common Input file name: %s", cm_val)
+        upload_dataset(gi, cm_val, file_type, fd_name)
 
     # Find files on filesystem
     logging.info("Collecting files from filesystem")
@@ -84,12 +98,15 @@ def collect_inputs(config_path):
     for k, v in common_inputs.items():
         logging.info('''Collecting common inputs from Galaxy: "%s" "%s"''', k, v)
         f = galaxy_fs.get_path(gi, v)
+        logging.info('''f path: "%s"''',f)
         common_inputs_library_ids[k] = f["id"]
 
+    logging.info('''Collecting common inputs dict: "%s"''', common_inputs_library_ids)
     steps_by_label = {}
     inputs = {}
     for step in wfdesc["steps"].values():
         label = step.get("label")
+        logging.info('''Step label is: "%s"''', label)
         uuid = step.get("uuid")
         steps_by_label[label] = step
         if label in common_inputs_library_ids:
@@ -181,6 +198,11 @@ def get_library_folder(gi, library_folder_name):
     lib = libs[0]
     lib_id = lib["id"]
     return lib_id, data_folder_id
+
+def create_history_tags(gi,history_id, tags):
+    logging.info("Updating History tags with: %s", tags)
+    for tag in tags:
+        gi.histories.create_history_tag(history_id, tag)
 
 def upload_dataset(gi, data_path, file_type, folder_name):
     lib_id, folder_id = get_library_folder(gi, folder_name)
