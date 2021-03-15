@@ -204,7 +204,7 @@ def create_history_tags(gi,history_id, tags):
     for tag in tags:
         gi.histories.create_history_tag(history_id, tag)
 
-def upload_dataset(gi, data_path, file_type, folder_name):
+def upload_dataset(gi, data_path, file_type, folder_name, link="link_to_files"):
     lib_id, folder_id = get_library_folder(gi, folder_name)
     data_name = os.path.basename(data_path)
     galaxy_dataset = folder_name + "/" + data_name
@@ -213,8 +213,12 @@ def upload_dataset(gi, data_path, file_type, folder_name):
         logging.info("Uploading: %s", galaxy_dataset)
         logging.info("File type: %s", file_type)
         logging.info("File path: %s", data_path)
-        galaxy_path = gi.libraries.upload_from_galaxy_filesystem(
-            lib_id, data_path, folder_id, link_data_only="link_to_files", file_type=file_type)[0]
+        if os.path.isabs(data_path):
+            galaxy_path = gi.libraries.upload_from_galaxy_filesystem(
+                lib_id, data_path, folder_id, link_data_only=link, file_type=file_type)[0]
+        else:
+            galaxy_path=gi.libraries.upload_file_from_server(
+                lib_id, data_path, folder_id, link_data_only=link, file_type=file_type)[0]
     else:
         logging.info('''Skipping upload, file exists at "{}"'''.format(galaxy_path))
 
