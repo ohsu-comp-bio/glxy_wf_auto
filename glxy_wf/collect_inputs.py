@@ -214,8 +214,10 @@ def upload_dataset(gi, data_path, file_type, folder_name, link="link_to_files"):
         logging.info("File type: %s", file_type)
         logging.info("File path: %s", data_path)
         if os.path.isabs(data_path):
-            galaxy_path = gi.libraries.upload_from_galaxy_filesystem(
-                lib_id, data_path, folder_id, link_data_only=link, file_type=file_type)[0]
+            galaxy_path = gi.libraries.upload_file_from_local_path(                  
+                lib_id, data_path, folder_id, file_type=file_type)[0] 
+            #galaxy_path = gi.libraries.upload_from_galaxy_filesystem(
+            #    lib_id, data_path, folder_id, link_data_only=link, file_type=file_type)[0]
         else:
             galaxy_path=gi.libraries.upload_file_from_server(
                 lib_id, data_path, folder_id, link_data_only=link, file_type=file_type)[0]
@@ -250,3 +252,5 @@ def create_dataset_or_collection_in_history(gi, name, history_id, ids):
 
     return collection
 
+if __name__ == "__main__":
+    collect_inputs(sys.argv[1])
