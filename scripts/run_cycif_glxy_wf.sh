@@ -47,13 +47,6 @@ else
     echo Error - no lab identified for sample directory \n $sample_dir
     exit 1
 fi
-# Get the metadata files based on lab
-if [ -z "$assay" ]; then
-    assay=HMS_Immune_v1
-    echo Using default assay: $assay
-else
-    echo Assay provided: $assay
-fi
 
 # Find the sample files
 # Define sort_files
@@ -143,7 +136,7 @@ fi
 # Rename files if appropriate and rsync to the galaxy dataset import directory
 destfiles=""
 for sf in ${sample_files[@]}; do
-    dest="${DATASET_IMPORT}/${lab}/${sample/BEMS/0000}/$(basename $sf)"
+    dest="${DATASET_IMPORT}/raw_data/$(basename $sf)"
     if [ ! -f $dest ]; then
         echo "Syncing $sf to $dest."
         srun rsync -ivazO $sf $dest
@@ -196,7 +189,6 @@ fi
 # Run  Workflow
 echo "Collecting inputs and invoking workflow in Galaxy"
 srun glxy_wf collect_inputs ${WF_GEN}/configs/$CONFIG
-#python glxy_wf/collect_inputs.py ${WF_GEN}/configs/$CONFIG
 
 # move outputs to patient dir
 #sbatch ${PROJ_BASE}/code/move_outputs.sbatch $WORKFLOW $PATIENT $sample
